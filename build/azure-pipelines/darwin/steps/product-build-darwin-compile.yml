@@ -347,6 +347,24 @@ steps:
         displayName: Publish signed client archive
         sbomEnabled: false
 
+    # Install the provisioning profile on the CI agent so that AMFI trusts
+    # restricted entitlements (e.g. keychain-access-groups) during tests.
+    # Without this, macOS will SIGKILL (exit code 9) any process whose
+    # entitlements require a profile that isn't system-trusted.
+    - script: |
+        set -e
+        PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+        mkdir -p "$PROFILE_DIR"
+        if [ -f build/darwin/main.provisionprofile ]; then
+          cp build/darwin/main.provisionprofile "$PROFILE_DIR/"
+          echo "Installed main.provisionprofile"
+        fi
+        if [ -f build/darwin/agents.provisionprofile ]; then
+          cp build/darwin/agents.provisionprofile "$PROFILE_DIR/"
+          echo "Installed agents.provisionprofile"
+        fi
+      displayName: Install provisioning profiles
+
   - ${{ if or(eq(parameters.VSCODE_RUN_ELECTRON_TESTS, true), eq(parameters.VSCODE_RUN_BROWSER_TESTS, true), eq(parameters.VSCODE_RUN_REMOTE_TESTS, true)) }}:
     - template: product-build-darwin-test.yml@self
       parameters:
